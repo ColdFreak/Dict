@@ -42,7 +42,24 @@ def mkdir_p(path):
 		else:
 		 	raise
 
+def add_a_word(word):
+	file = open(os.environ['HOME']+"/Dict/word_content", "a")
+	file.write(':'.join(word))
+	file.write('\n')
+	file.close()
+
+def find_word_in_file(word):
+	f = open(os.environ['HOME']+"/Dict/word_content", "r")
+	for line in f.readlines():
+		if line.startswith(word):
+			return True, line
+	return False, None
+
+
+
 if __name__ == "__main__":
+	# this contains everython about a word, for example "vim:[vɪm]:精力；生气；精神"
+	word_content = []
 	# url to download the word
 	word_url = "http://dict.cn/"+sys.argv[1]
 
@@ -57,11 +74,26 @@ if __name__ == "__main__":
 	mkdir_p(words_dir)
 	mp3_name = words_dir+sys.argv[1]+".mp3"
 
+
+	real, string = find_word_in_file(sys.argv[1])
+	if real:
+		print ('\n',string)
+	else:
+		# extract pronounciation 
+		parser = LinksParser()
+		f = urlopen(word_url)
+		html = f.read()
+		html = html.decode('UTF-8')
+		parser.feed(html)
+
+		word_meanings = re.findall('</span><strong>(.*)</strong></li>',html, re.MULTILINE)
+
 	# if this word's audio file is already exists, just play it
 	# do not download it again
 	if os.path.exists(mp3_name):
 		process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 		retcode = process.wait()
+		sys.exit(0)
 	else:
 		# download mp3 file to $HOME/words_mp3
 		mp3file = urlopen(audio_url)
@@ -71,22 +103,19 @@ if __name__ == "__main__":
 		process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 		retcode = process.wait()
 
-	# extract pronounciation 
-	parser = LinksParser()
-	f = urlopen(word_url)
-	html = f.read()
-	html = html.decode('UTF-8')
-	parser.feed(html)
-
-	word_meanings = re.findall('</span><strong>(.*)</strong></li>',html, re.MULTILINE)
+	
+	
 
 	# if you try to search a non-sense word like 'asdfsdfs', nothing will be in the date list
 	try:
 		print (sys.argv[1], parser.data[0])
+		word_content.append(sys.argv[1])
+		word_content.append(parser.data[0])
 	except IndexError:
 		sys.exit(0)
 
 	for match in word_meanings:
+		word_content.append(match)
 		print (match)
 
 	# play mp3 file and redirect stdout to /dev/null then wait process to complete
@@ -106,7 +135,7 @@ if __name__ == "__main__":
 		print ("OK, forget about it")
 		sys.exit(0)
 	if add_word == "y":
-		add_a_word(spell, pronun, meaning)
+		add_a_word(word_content)
 		print ("Great")
 		sys.exit(0)
 	else:

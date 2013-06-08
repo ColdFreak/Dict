@@ -56,6 +56,8 @@ words_dir =os.environ['HOME']+"/words_mp3/"
 mkdir_p(words_dir)
 mp3_name = words_dir+sys.argv[1]+".mp3"
 
+# if this word's audio file is already exists, just play it
+# do not download it again
 if os.path.exists(mp3_name):
 	process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 	retcode = process.wait()

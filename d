@@ -76,7 +76,7 @@ html = html.decode('UTF-8')
 parser.feed(html)
 
 word_meanings = re.findall('</span><strong>(.*)</strong></li>',html, re.MULTILINE)
-
+parser.close()
 
 # if you try to search a non-sense word like 'asdfsdfs', nothing will be in the date list
 try:
@@ -98,10 +98,10 @@ except KeyboardInterrupt:
 	print ("\n")
 	sys.exit(0)
 
-if add_word == "y" or add_word == "yes":
-	print ("Add this word to database")
+# press just 'enter' will add this word
+if add_word == "y" or add_word == "" :
+	print ("Great")
 else:
 	os.remove(mp3_name)
 	print ("OK, just forget about it")
-parser.close()
 

@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
 		real, string = find_word_from_file(input_str)
 		if real:
-			print ('\n',string)
+			print ('\n\t',string)
 		else:
 			# url to download the word
 			word_url = "http://dict.cn/"+input_str

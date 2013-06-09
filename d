@@ -56,7 +56,7 @@ def find_word_from_file(word):
 
 def wait_for_input():
 	try:
-		input_str = input('> ')
+		input_str = input('>> ')
 	except EOFError:
 		print ("\n")
 		sys.exit(0)
@@ -66,15 +66,21 @@ def wait_for_input():
 	return input_str
 
 
+def delete_from_file(word):
+	with open(words_file, "r") as f:
+		lines = f.readlines()
+	with open(words_file, "w") as f:
+		for line in lines:
+			if not line.startswith(word) or line not in ['\n', '\r\n']:			
+				f.write(line)
 
 if __name__ == "__main__":
+	
+	# flag to show wether the word is already in the file 
+	word_is_there = 0
+	
 	# wait for input, word or action
 	input_str = ""
-
-	# this contains everython about a word, for example "vim:[vɪm]:精力；生气；精神"
-	word_content = []
-
-
 
 	# directory to store mp3 file 
 	mp3_dir =os.environ['HOME'] + "/Dict/mp3_dir/"
@@ -83,7 +89,7 @@ if __name__ == "__main__":
 	# file to store content of a words
 	words_file = os.environ['HOME']+"/Dict/words_file"
 
-	# redirect stdout to /dev/null when play the mp3 file
+		# redirect stdout to /dev/null when play the mp3 file
 	dev_null = open('/dev/null', 'w')
 
 	# make directory to store mp3 files
@@ -92,6 +98,8 @@ if __name__ == "__main__":
 
 	# try to find the word from file first
 	while True:
+		# this contains everython about a word, for example "vim:[vɪm]:精力；生气；精神"
+		word_content = []
 		input_str = wait_for_input()
 		# specific name for each mp3 file
 		mp3_name = mp3_dir + input_str + ".mp3"
@@ -100,11 +108,16 @@ if __name__ == "__main__":
 
 		real, string = find_word_from_file(input_str)
 		if real:
+			word_is_there = 1			
 			print ('\n',string)
 		else:
+
+			# we didn't find the word in the file, so change word_if_there flag
+			# from 1 to 0
+			word_is_there = 0
+
 			# url to download the word
 			word_url = "http://dict.cn/"+input_str
-
 
 			# if word not found in file, retrieve from web page
 			# extract pronounciation and find meaning 
@@ -120,21 +133,20 @@ if __name__ == "__main__":
 
 			# if you try to search a non-sense word like 'asdfsdfs', nothing will be in the date list
 			try:
-
-				print ("\n\t",input_str, parser.data[0])
+				print ("\n",input_str, parser.data[0])
 				word_content.append(input_str)
 				word_content.append(parser.data[0])
 			except IndexError:
-				
+			
 				print ('Word not found\n')
 				continue
 
 			for match in word_meanings:
 				word_content.append(match)
-				print ("\n\t", match)
+				print ("\n", match)
 
-		# if this word's audio file is already exists, just play it
-		# do not download it again
+	# if this word's audio file is already exists, just play it
+	# do not download it again
 		if os.path.exists(mp3_name):
 			process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 			retcode = process.wait()
@@ -146,14 +158,11 @@ if __name__ == "__main__":
 			output_mp3.close()
 			process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 
-		
-		
-
-
+	
+	
 		# play mp3 file and redirect stdout to /dev/null then wait process to complete
-
 		try:
-			add_word = input("\n\tAdd this? ")
+			add_word = input("> Add this? ")
 		except EOFError:
 			print ("\n")
 			sys.exit(0)
@@ -163,13 +172,21 @@ if __name__ == "__main__":
 
 		# press just 'enter' will add this word
 		if add_word == "":
-			os.remove(mp3_name)
-			print ("\n\tOK, forget about it")
-		if add_word == "y":
-			add_a_word(word_content)
-			print ("\n\tGreat")
+			if word_is_there == 1:
+				pass
+			else:
+				os.remove(mp3_name)
+				print ("         OK, forget about it")
+		elif add_word == "y":
+			if word_is_there == 1:
+				print ('  Word already there')
+			else:
+				add_a_word(word_content)
+				print ("  Great")
 		else:
+			if word_is_there == 1:
+				delete_from_file(input_str)
 			os.remove(mp3_name)
-			print ("\n\tOK, forget about it")
+			print ("  OK, forget about it")
 
 		retcode = process.wait()

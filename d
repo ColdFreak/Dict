@@ -195,7 +195,6 @@ if __name__ == "__main__":
 			if word_is_there == 1:
 				delete_from_file(input_str)
 				os.remove(mp3_name)
-				print ("come her")
 			else:
 				os.remove(mp3_name)
 			print ("  OK, forget about it")

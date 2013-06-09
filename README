@@ -1,4 +1,3 @@
-出现Add this 时
+也许我应该使用urllib2的User-agent功能来从google trnaslate
+获取发音
 
-如果本身有这个单词，按下enter，则保留
-如果本身没有这个单词， 按下enter，则删除刚下载的mp3，不添加

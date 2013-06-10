@@ -1,13 +1,17 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import sys, os, re, errno
-from html.parser import HTMLParser
-from urllib.request import urlopen
+#from html.parser import HTMLParser
+import HTMLParser
+
+#from urllib.request import urlopen
+import urllib2
+
 import subprocess
 
-class LinksParser(HTMLParser):
+class LinksParser(HTMLParser.HTMLParser):
 	def __init__(self):
-		HTMLParser.__init__(self)
+		HTMLParser.HTMLParser.__init__(self)
 		self.recording = 0
 		self.data = []
 
@@ -42,9 +46,11 @@ def mkdir_p(path):
 		else:
 			raise
 
-def add_a_word(word):
+def add_a_word(word_content):
 	with open(words_file, "a") as f:
-		f.write(':'.join(word))
+	
+		# don't forget encode to utf-8 before write		
+		f.write(':'.join(word_content).encode('utf-8'))
 		f.write('\n')
 
 def find_word_from_file(word):
@@ -56,12 +62,12 @@ def find_word_from_file(word):
 
 def wait_for_input():
 	try:
-		input_str = input('>> ')
+		input_str = raw_input('>> ')
 	except EOFError:
-		print ("\n")
+		print "\n"
 		sys.exit(0)
 	except KeyboardInterrupt:
-		print ("\n")
+		print "\n"
 		sys.exit(0)
 	return input_str
 
@@ -74,8 +80,63 @@ def delete_from_file(word):
 			if not line.startswith(word) and line not in ['\n', '\r\n']:	
 				f.write(line)
 
-if __name__ == "__main__":
+def download_mp3(audio_url):
+	mp3file = urllib2.urlopen(audio_url)
+	with open(mp3_name, 'wb') as output_mp3: 
+		output_mp3.write(mp3file.read())
 
+def process_word(word):
+	word_is_there = 0
+	word_content = []
+	real, string = find_word_from_file(word)
+
+	if real:
+		word_is_there = 1			
+		print '\n',string
+		return word_is_there, word_content
+	else:
+
+		# we didn't find the word in the file, so change word_if_there flag
+		# from 1 to 0
+		word_is_there = 0
+
+		# url to download the word
+		word_url = "http://dict.cn/"+ word
+
+		# if word not found in file, retrieve from web page
+		# extract pronounciation and find meaning 
+		parser = LinksParser()
+		f = urllib2.urlopen(word_url)
+		html = f.read()
+		html = html.decode('UTF-8')
+		parser.feed(html)
+		parser.close()
+	
+
+		word_meanings = re.findall('</span><strong>(.*)</strong></li>',html, re.MULTILINE)
+
+		# if you try to search a non-sense word like 'asdfsdfs', nothing will be in the date list
+		try:
+			print "\n-->",word, parser.data[0]
+			word_content.append(word)
+			word_content.append(parser.data[0])
+		except IndexError:
+		
+			print 'Word not found\n'
+
+			return None
+		for match in word_meanings:
+			word_content.append(match)
+			print "\n", match.encode('utf-8')
+		
+		return word_is_there, word_content
+
+
+
+
+if __name__ == "__main__":
+	
+	
 	# flag to show wether the word is already in the file 
 	word_is_there = 0
 
@@ -95,13 +156,17 @@ if __name__ == "__main__":
 	# make directory to store mp3 files
 	mkdir_p(mp3_dir)
 
-
+	
+	if len(sys.argv) > 1:
+		for i in range(1, len(sys.argv)):
+			process_word(sys.argv[i])
+			
+	
 	# try to find the word from file first
 	while True:
 		# flag to show wether the word is already in the file 		
 		word_is_there = 0
-
-		# this contains everython about a word, for example "vim:[vɪm]:精力；生气；精神"
+		# this contains everython about a word
 		word_content = []
 
 		input_str = wait_for_input()
@@ -111,47 +176,9 @@ if __name__ == "__main__":
 
 		#url to download the mp3 file
 		audio_url = "http://tts.yeshj.com/uk/s/"+input_str
-
-
-		real, string = find_word_from_file(input_str)
-
-		if real:
-			word_is_there = 1			
-			print ('\n',string)
-		else:
-
-			# we didn't find the word in the file, so change word_if_there flag
-			# from 1 to 0
-			word_is_there = 0
-
-			# url to download the word
-			word_url = "http://dict.cn/"+input_str
-
-			# if word not found in file, retrieve from web page
-			# extract pronounciation and find meaning 
-			parser = LinksParser()
-			f = urlopen(word_url)
-			html = f.read()
-			html = html.decode('UTF-8')
-			parser.feed(html)
-			parser.close()
 		
 
-			word_meanings = re.findall('</span><strong>(.*)</strong></li>',html, re.MULTILINE)
-
-			# if you try to search a non-sense word like 'asdfsdfs', nothing will be in the date list
-			try:
-				print ("\n",input_str, parser.data[0])
-				word_content.append(input_str)
-				word_content.append(parser.data[0])
-			except IndexError:
-			
-				print ('Word not found\n')
-				continue
-
-			for match in word_meanings:
-				word_content.append(match)
-				print ("\n", match)
+		word_is_there, word_content = process_word(input_str)
 
 		# if this word's audio file is already exists, just play it
 		# do not download it again
@@ -160,22 +187,20 @@ if __name__ == "__main__":
 			retcode = process.wait()
 		else:
 			# download mp3 file to $HOME/mp3.dir
-			mp3file = urlopen(audio_url)
-			output_mp3 = open(mp3_name, 'wb')
-			output_mp3.write(mp3file.read())
-			output_mp3.close()
+			download_mp3(audio_url)
+			# find wait function on the last line
 			process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 
 	
 	
 		# play mp3 file and redirect stdout to /dev/null then wait process to complete
 		try:
-			add_word = input(">> Add this? ")
+			add_word = raw_input('Add this -> ' )
 		except EOFError:
-			print ("\n")
+			print "\n"
 			sys.exit(0)
 		except KeyboardInterrupt:
-			print ("\n")
+			print "\n"
 			sys.exit(0)
 
 		# press just 'enter' will add this word
@@ -184,19 +209,19 @@ if __name__ == "__main__":
 				pass
 			else:
 				os.remove(mp3_name)
-				print ("  OK, forget about it")
+				print "  OK, forget about it"
 		elif add_word == "y":
 			if word_is_there == 1:
-				print ('  Word already there')
+				print '  Word already there'
 			else:
 				add_a_word(word_content)
-				print ("  Great")
+				print "  Great"
 		else:
 			if word_is_there == 1:
 				delete_from_file(input_str)
 				os.remove(mp3_name)
 			else:
 				os.remove(mp3_name)
-			print ("  OK, forget about it")
+			print "  OK, forget about it"
 
 		retcode = process.wait()

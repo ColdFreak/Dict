@@ -87,7 +87,7 @@ def delete_from_file(word):
 			if not line.startswith(word) and line not in ['\n', '\r\n']:	
 				f.write(line)
 
-def download_mp3(audio_url):
+def download_mp3(audio_url, mp3_name):
 	# we have to simulate Mozilla by using a User-agent in our request 
 	#to retrieve content from google
 	headers = {'User-Agent' : 'Mozilla/5.0' }
@@ -146,15 +146,25 @@ def process_word(word):
 
 
 def meaning_to_spelling():
+
+
+
 	last_index = 0
+
 	with open(words_file) as f:
 		lines = f.readlines()
 
-	print '>>>Exercise mode'
+	print '>>> Exercise mode'
 	
 	this_index = randint(0, len(lines)-1)
 
 	print "---> ",lines[this_index].split(':')[2]
+	
+
+	mp3_name = mp3_dir + lines[this_index].split(':')[0]+".mp3"
+
+	#url to download the mp3 file
+	audio_url = "http://translate.google.com/translate_tts?tl=en&q="+lines[this_index].split(':')[0]
 
 
 	while True:
@@ -169,9 +179,26 @@ def meaning_to_spelling():
 		
 		if spelling == lines[this_index].split(':')[0] :
 			print " Good Job \(^_^)/\n"
+			if os.path.exists(mp3_name):
+				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
+				retcode = process.wait()
+			else:
+				# download mp3 file to $HOME/mp3.dir
+				download_mp3(audio_url, mp3_name)
+				# find wait function on the last line
+				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 		else:
 			print "Too bad >_< \n"
 			print "Right spelling --->", lines[this_index].split(':')[0]
+			if os.path.exists(mp3_name):
+				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
+				retcode = process.wait()
+			else:
+				# download mp3 file to $HOME/mp3.dir
+				download_mp3(audio_url, mp3_name)
+				# find wait function on the last line
+				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
+				retcode = process.wait()
 
 		last_index = this_index
 
@@ -182,6 +209,11 @@ def meaning_to_spelling():
 			this_index = randint(0, len(lines)-1)
 
 		print "Next word--> ", lines[this_index].split(':')[2]
+
+		mp3_name = mp3_dir + lines[this_index].split(':')[0]+".mp3"
+
+		#url to download the mp3 file
+		audio_url = "http://translate.google.com/translate_tts?tl=en&q="+lines[this_index].split(':')[0]
 		
 			
 		
@@ -200,10 +232,12 @@ if __name__ == "__main__":
 	input_str = ""
 
 	# directory to store mp3 files
-	mp3_dir =os.environ['HOME'] + "/Dict/mp3_dir/"
+	global mp3_dir
+	mp3_dir	= os.environ['HOME'] + "/Dict/mp3_dir/"
 
 
 	# file to store content of a words
+	global words_file
 	words_file = os.environ['HOME']+"/Dict/words_file"
 
 	# redirect stdout to /dev/null when play the mp3 file
@@ -249,7 +283,7 @@ if __name__ == "__main__":
 				retcode = process.wait()
 			else:
 				# download mp3 file to $HOME/mp3.dir
-				download_mp3(audio_url)
+				download_mp3(audio_url, mp3_name)
 				# find wait function on the last line
 				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 

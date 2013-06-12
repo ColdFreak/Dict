@@ -171,14 +171,13 @@ def meaning_to_spelling():
 		try:
 			spelling = raw_input('>>> ')
 		except EOFError:
-			print "\n"
 			return 
 		except KeyboardInterrupt:
-			print "\n"
 			return 
 		
 		if spelling == lines[this_index].split(':')[0] :
-			print " Good Job \(^_^)/\n"
+			print " Good Job \(^_^)/"
+			print lines[this_index].split(':')[1]
 			if os.path.exists(mp3_name):
 				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 				retcode = process.wait()
@@ -188,8 +187,9 @@ def meaning_to_spelling():
 				# find wait function on the last line
 				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 		else:
-			print "Too bad >_< \n"
 			print "Right spelling --->", lines[this_index].split(':')[0]
+			print "Try again "
+			
 			if os.path.exists(mp3_name):
 				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 				retcode = process.wait()
@@ -199,6 +199,7 @@ def meaning_to_spelling():
 				# find wait function on the last line
 				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 				retcode = process.wait()
+			continue	
 
 		last_index = this_index
 

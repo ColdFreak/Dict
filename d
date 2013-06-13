@@ -1,43 +1,16 @@
 #!/usr/bin/env python
 
 import sys, os, re, errno
-#from html.parser import HTMLParser
-import HTMLParser
 
-#from urllib.request import urlopen
 import urllib2
 
+# invoke 'play' command
 import subprocess
 
 # generate random number in exercise mode
 from random import randint
 
-class LinksParser(HTMLParser.HTMLParser):
-	def __init__(self):
-		HTMLParser.HTMLParser.__init__(self)
-		self.recording = 0
-		self.data = []
-
-	def handle_starttag(self, tag, attributes):
-		if tag != 'bdo':
-			return
-		if self.recording:
-			self.recording += 1
-			return
-#		for name, value in attributes:
-#			if name == 'class' and value == 'phonetic':
-#				break
-#			else:
-#				return
-		self.recording = 1
-
-	def handle_endtag(self, tag):
-		if tag == 'bdo' and self.recording:
-			self.recording -= 1
-
-	def handle_data(self, data):
-		if self.recording:
-			self.data.append(data)
+from bs4 import BeautifulSoup
 
 
 def mkdir_p(path):
@@ -55,6 +28,7 @@ def add_a_word(word_content):
 
 		# don't forget encode to utf-8 before write		
 		f.write(':'.join(word_content).encode('utf-8'))
+#		f.write((':'.join(str(v) for v in word_content)).endcode('utf-8'))
 		f.write('\n')
 
 def find_word_from_file(word):
@@ -116,31 +90,39 @@ def process_word(word):
 
 		# if word not found in file, retrieve from web page
 		# extract pronounciation and find meaning 
-		parser = LinksParser()
 		f = urllib2.urlopen(word_url)
 		html = f.read()
-		html = html.decode('UTF-8')
-		parser.feed(html)
-		parser.close()
-	
+		soup = BeautifulSoup(html)
 
-		word_meanings = re.findall('</span><strong>(.*)</strong></li>',html, re.MULTILINE)
+		phonetic = soup.find('div', class_ = 'phonetic')
+		basic = soup.find('div', class_ = 'layout basic')
+	
+		pronunciations = phonetic.find_all('bdo')
+		word_meanings = basic.find_all('strong')
+
+		# just extract the first one
+		pronun = pronunciations[0].find(text=True)
+
 
 		# if you try to search a non-sense word like 'asdfsdfs', nothing will be in the date list
 		try:
 			print "\n-->",word
 			word_content.append(word)
-			print parser.data[0]
-			word_content.append(parser.data[0])
+			print "   %s" % pronun
+			word_content.append(pronun)
+			
 		except IndexError:
 		
 			print ' Not found\n'
 
 			return False, word_content
 
-		for match in word_meanings:
-			word_content.append(match)
-			print "\n", match.encode('utf-8')
+		for meaning in word_meanings:
+			txt = ""
+			text = meaning.find(text=True)
+			print "   %s" % text
+			txt += text
+			word_content.append(txt)
 		
 		return word_is_there, word_content
 
@@ -262,7 +244,11 @@ if __name__ == "__main__":
 
 		input_str = wait_for_input()
 
-		if (input_str == 'e'):
+		# wait for input until you input somethin
+		if not input_str:
+			continue
+
+		elif (input_str == 'e'):
 			# exercise mode, spell the word by the meaning
 			meaning_to_spelling()
 

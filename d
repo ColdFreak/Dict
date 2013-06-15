@@ -53,12 +53,13 @@ def wait_for_input():
 	return input_str
 
 
-def delete_from_file(word):
+def delete_from_file(words_file, word):
 	with open(words_file, "r") as f:
 		lines = f.readlines()
 	with open(words_file, "w") as f:
 		for line in lines:
-			if not line.startswith(word) and line not in ['\n', '\r\n']:	
+			if line.split(':')[0] != word and line not in ['\n', '\r\n']:	
+#			if not line.startswith(word) and line not in ['\n', '\r\n']:	
 				f.write(line)
 
 def download_mp3(audio_url, mp3_name):
@@ -135,6 +136,10 @@ def meaning_to_spelling():
 
 	with open(words_file) as f:
 		lines = f.readlines()
+		if len(lines) < 1:
+			return
+	with open(memo_file) as f:
+		memo_lines = f.readlines()
 
 	print '>>> Exercise mode'
 	
@@ -160,6 +165,10 @@ def meaning_to_spelling():
 		if spelling == lines[this_index].split(':')[0] :
 			print " Good Job \(^_^)/"
 			print lines[this_index].split(':')[1]
+			for memo_line in memo_lines:
+				if memo_line.split(':')[0] == spelling:
+					print memo_line
+					break
 			if os.path.exists(mp3_name):
 				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 				retcode = process.wait()
@@ -187,8 +196,11 @@ def meaning_to_spelling():
 
 		this_index = randint(0, len(lines)-1)
 
-		while last_index == this_index :
+		if len(lines) > 1:	
+			while last_index == this_index :
 
+				this_index = randint(0, len(lines)-1)
+		else:
 			this_index = randint(0, len(lines)-1)
 
 		print "Next word--> ", lines[this_index].split(':')[2]
@@ -198,21 +210,46 @@ def meaning_to_spelling():
 		#url to download the mp3 file
 		audio_url = "http://translate.google.com/translate_tts?tl=en&q="+lines[this_index].split(':')[0]
 		
-			
+def add_memo(word, memo_file):
+	memo = [];
+	mm = ""
+	while True:
+		try:
+			input_str = raw_input('Memo >> ')
+		except EOFError:
+			print "\n"
+			return
+		except KeyboardInterrupt:
+			print "\n"
+			sys.exit(0)	
+		if input_str.strip() == "":
+			continue
+		else:
+			break
+	memo.append(word)
+	memo.append(input_str)
+	mm = ':'.join(st for st in memo)
+	with open(memo_file, "a+") as f:
+		f.write(mm)
+		f.write('\n')
 		
 
 
 
 
 
+
 if __name__ == "__main__":
-	
-	
+
 	# flag to show wether the word is already in the file 
 	word_is_there = 0
 
 	# wait for input, word or action
 	input_str = ""
+	
+	global memo_file
+   	memo_file = os.environ['HOME'] + "/Dict/memo_file"
+	
 
 	# directory to store mp3 files
 	global mp3_dir
@@ -266,6 +303,7 @@ if __name__ == "__main__":
 			# if this word's audio file is already exists, just play it
 			# do not download it again
 			if os.path.exists(mp3_name):
+
 				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 				retcode = process.wait()
 			else:
@@ -299,9 +337,13 @@ if __name__ == "__main__":
 				else:
 					add_a_word(word_content)
 					print "  Great"
+			elif add_word == "m":
+					add_memo(input_str, memo_file)
+					print "Memo added"
 			else:
 				if word_is_there == 1:
-					delete_from_file(input_str)
+					delete_from_file(memo_file, input_str)
+					delete_from_file(words_file, input_str)
 					os.remove(mp3_name)
 				else:
 					os.remove(mp3_name)

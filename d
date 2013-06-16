@@ -24,10 +24,12 @@ def mkdir_p(path):
 
 # append the info about the word to file $HOME/Dict/words_file
 def add_a_word(word_content):
-	with open(words_file, "a") as f:
+	mm = ""
+	mm = ':'.join(v.encode('utf-8') for v in word_content)
+	with open(words_file, "a+") as f:
 
-		# don't forget encode to utf-8 before write		
-		f.write(':'.join(word_content).encode('utf-8'))
+#		f.write(mm.encode('utf-8'))
+		f.write(mm)
 #		f.write((':'.join(str(v) for v in word_content)).endcode('utf-8'))
 		f.write('\n')
 
@@ -96,21 +98,24 @@ def process_word(word):
 		soup = BeautifulSoup(html)
 
 		phonetic = soup.find('div', class_ = 'phonetic')
-		basic = soup.find('div', class_ = 'layout basic')
-	
 		pronunciations = phonetic.find_all('bdo')
+			
+		basic = soup.find('div', class_ = 'layout basic')
 		word_meanings = basic.find_all('strong')
 
-		# just extract the first one
-		pronun = pronunciations[0].find(text=True)
 
 
 		# if you try to search a non-sense word like 'asdfsdfs', nothing will be in the date list
 		try:
 			print "\n-->",word
 			word_content.append(word)
-			print "   %s" % pronun
-			word_content.append(pronun)
+			# just extract the first one
+			if not pronunciations[0] is None:
+				pronun = pronunciations[0].find(text=True)
+				print "   %s" % pronun
+				word_content.append(pronun)
+			else:
+				pass
 			
 		except IndexError:
 		
@@ -200,6 +205,7 @@ def meaning_to_spelling():
 			while last_index == this_index :
 
 				this_index = randint(0, len(lines)-1)
+			last_index = this_index
 		else:
 			this_index = randint(0, len(lines)-1)
 
@@ -217,7 +223,7 @@ def add_memo(word, memo_file):
 		try:
 			input_str = raw_input('Memo >> ')
 		except EOFError:
-			print "\n"
+			print "Memo not added"
 			return
 		except KeyboardInterrupt:
 			print "\n"
@@ -228,15 +234,11 @@ def add_memo(word, memo_file):
 			break
 	memo.append(word)
 	memo.append(input_str)
-	mm = ':'.join(st for st in memo)
+	mm = ':'.join(memo)
 	with open(memo_file, "a+") as f:
 		f.write(mm)
 		f.write('\n')
-		
-
-
-
-
+	print "Memo Added"
 
 
 if __name__ == "__main__":
@@ -339,7 +341,7 @@ if __name__ == "__main__":
 					print "  Great"
 			elif add_word == "m":
 					add_memo(input_str, memo_file)
-					print "Memo added"
+					add_a_word(word_content)
 			else:
 				if word_is_there == 1:
 					delete_from_file(memo_file, input_str)

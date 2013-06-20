@@ -175,18 +175,28 @@ def meaning_to_spelling():
 					print memo_line
 					break
 			if os.path.exists(mp3_name):
-				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
+				if sys.platform == 'darwin':
+					process = subprocess.Popen(['afplay', mp3_name], stdout=dev_null, stderr=dev_null)
+				else:
+					process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 				retcode = process.wait()
 			else:
 				# download mp3 file to $HOME/mp3.dir
 				download_mp3(audio_url, mp3_name)
 				# find wait function on the last line
-				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
+				if sys.platform == 'darwin':
+					process = subprocess.Popen(['afplay', mp3_name], stdout=dev_null, stderr=dev_null)
+				else:
+					process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 		else:
 			print "Right spelling --->", lines[this_index].split(':')[0]
 			print "Try again "
 			
 			if os.path.exists(mp3_name):
+				if sys.platform == 'darwin':
+					process = subprocess.Popen(['afplay', mp3_name], stdout=dev_null, stderr=dev_null)
+				else:
+					process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 				retcode = process.wait()
 			else:
@@ -305,14 +315,19 @@ if __name__ == "__main__":
 			# if this word's audio file is already exists, just play it
 			# do not download it again
 			if os.path.exists(mp3_name):
-
-				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
+				if sys.platform == 'darwin':
+					process = subprocess.Popen(['afplay', mp3_name], stdout=dev_null, stderr=dev_null)
+				else:
+					process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 				retcode = process.wait()
 			else:
 				# download mp3 file to $HOME/mp3.dir
 				download_mp3(audio_url, mp3_name)
 				# find wait function on the last line
-				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
+				if sys.platform == 'darwin':
+					process = subprocess.Popen(['afplay', mp3_name], stdout=dev_null, stderr=dev_null)
+				else:
+					process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 
 		
 		

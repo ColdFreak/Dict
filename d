@@ -197,7 +197,6 @@ def meaning_to_spelling():
 					process = subprocess.Popen(['afplay', mp3_name], stdout=dev_null, stderr=dev_null)
 				else:
 					process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
-				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
 				retcode = process.wait()
 			else:
 				# download mp3 file to $HOME/mp3.dir

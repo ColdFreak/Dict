@@ -4,7 +4,7 @@ import sys, os, re, errno
 
 import urllib2
 
-# invoke 'play' command
+# invoke 'play'(linux) or 'afplay'(Mac OS X) command
 import subprocess
 
 # generate random number in exercise mode
@@ -13,6 +13,7 @@ from random import randint
 from bs4 import BeautifulSoup
 
 
+# create a directory to save audio mp3(mp3_dir)
 def mkdir_p(path):
 	try:
 		os.makedirs(path)
@@ -25,12 +26,9 @@ def mkdir_p(path):
 # append the info about the word to file $HOME/Dict/words_file
 def add_a_word(word_content):
 	mm = ""
-	mm = ':'.join(v.encode('utf-8') for v in word_content)
+	mm = '~'.join(v.encode('utf-8') for v in word_content)
 	with open(words_file, "a+") as f:
-
-#		f.write(mm.encode('utf-8'))
 		f.write(mm)
-#		f.write((':'.join(str(v) for v in word_content)).endcode('utf-8'))
 		f.write('\n')
 
 def find_word_from_file(word):
@@ -38,8 +36,8 @@ def find_word_from_file(word):
 		for line in f.readlines():
 			if line.startswith(word):
 				# 'True means we found the word in file, then return the line
-				return True, line
-	return False, ""
+				return line
+	return None
 
 def wait_for_input():
 	try:
@@ -60,7 +58,7 @@ def delete_from_file(words_file, word):
 		lines = f.readlines()
 	with open(words_file, "w") as f:
 		for line in lines:
-			if line.split(':')[0] != word and line not in ['\n', '\r\n']:	
+			if line.split('~')[0] != word and line not in ['\n', '\r\n']:	
 #			if not line.startswith(word) and line not in ['\n', '\r\n']:	
 				f.write(line)
 
@@ -74,19 +72,19 @@ def download_mp3(audio_url, mp3_name):
 		output_mp3.write(mp3file.read())
 
 def process_word(word):
-	word_is_there = 0
+	is_word_there = 0
 	word_content = []
-	real, string = find_word_from_file(word)
+	string = find_word_from_file(word)
 
-	if real:
-		word_is_there = 1			
+	if string:
+		is_word_there = 1			
 		print '\n',string
-		return word_is_there, list(string)
+		return is_word_there, list(string)
 	else:
 
 		# we didn't find the word in the file, so change word_if_there flag
 		# from 1 to 0
-		word_is_there = 0
+		is_word_there = 0
 
 		# url to download the word
 		word_url = "http://dict.cn/"+ word
@@ -98,6 +96,8 @@ def process_word(word):
 		soup = BeautifulSoup(html)
 
 		phonetic = soup.find('div', class_ = 'phonetic')
+		if phonetic is None:
+			return is_word_there, None		
 		pronunciations = phonetic.find_all('bdo')
 			
 		basic = soup.find('div', class_ = 'layout basic')
@@ -110,7 +110,7 @@ def process_word(word):
 			print "\n-->",word
 			word_content.append(word)
 			# just extract the first one
-			if not pronunciations[0] is None:
+			if pronunciations[0] :
 				pronun = pronunciations[0].find(text=True)
 				print "   %s" % pronun
 				word_content.append(pronun)
@@ -123,19 +123,17 @@ def process_word(word):
 
 			return False, word_content
 
+		txt = ""
 		for meaning in word_meanings:
-			txt = ""
 			text = meaning.find(text=True)
 			print "   %s" % text
 			txt += text
-			word_content.append(txt)
+		word_content.append(txt)
 		
-		return word_is_there, word_content
+		return is_word_there, word_content
 
 
 def meaning_to_spelling():
-
-
 
 	last_index = 0
 
@@ -150,13 +148,13 @@ def meaning_to_spelling():
 	
 	this_index = randint(0, len(lines)-1)
 
-	print "---> ",lines[this_index].split(':')[2]
+	print "---> ",lines[this_index].split('~')[-1]
 	
 
-	mp3_name = mp3_dir + lines[this_index].split(':')[0]+".mp3"
+	mp3_name = mp3_dir + lines[this_index].split('~')[0]+".mp3"
 
 	#url to download the mp3 file
-	audio_url = "http://translate.google.com/translate_tts?tl=en&q="+lines[this_index].split(':')[0]
+	audio_url = "http://translate.google.com/translate_tts?tl=en&q="+lines[this_index].split('~')[0]
 
 
 	while True:
@@ -167,43 +165,18 @@ def meaning_to_spelling():
 		except KeyboardInterrupt:
 			return 
 		
-		if spelling == lines[this_index].split(':')[0] :
+		if spelling == lines[this_index].split('~')[0] :
 			print " Good Job \(^_^)/"
-			print lines[this_index].split(':')[1]
+			print lines[this_index].split('~')[1]
 			for memo_line in memo_lines:
-				if memo_line.split(':')[0] == spelling:
+				if memo_line.split('~')[0] == spelling:
 					print memo_line
 					break
-			if os.path.exists(mp3_name):
-				if sys.platform == 'darwin':
-					process = subprocess.Popen(['afplay', mp3_name], stdout=dev_null, stderr=dev_null)
-				else:
-					process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
-				retcode = process.wait()
-			else:
-				# download mp3 file to $HOME/mp3.dir
-				download_mp3(audio_url, mp3_name)
-				# find wait function on the last line
-				if sys.platform == 'darwin':
-					process = subprocess.Popen(['afplay', mp3_name], stdout=dev_null, stderr=dev_null)
-				else:
-					process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
+			process_audio(audio_url, mp3_name)
 		else:
-			print "Right spelling --->", lines[this_index].split(':')[0]
+			print "Right spelling --->", lines[this_index].split('~')[0]
 			print "Try again "
-			
-			if os.path.exists(mp3_name):
-				if sys.platform == 'darwin':
-					process = subprocess.Popen(['afplay', mp3_name], stdout=dev_null, stderr=dev_null)
-				else:
-					process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
-				retcode = process.wait()
-			else:
-				# download mp3 file to $HOME/mp3.dir
-				download_mp3(audio_url, mp3_name)
-				# find wait function on the last line
-				process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
-				retcode = process.wait()
+			process_audio(audio_url, mp3_name)
 			continue	
 
 		last_index = this_index
@@ -218,12 +191,12 @@ def meaning_to_spelling():
 		else:
 			this_index = randint(0, len(lines)-1)
 
-		print "Next word--> ", lines[this_index].split(':')[2]
+		print "Next word--> ", lines[this_index].split('~')[-1]
 
-		mp3_name = mp3_dir + lines[this_index].split(':')[0]+".mp3"
+		mp3_name = mp3_dir + lines[this_index].split('~')[0]+".mp3"
 
 		#url to download the mp3 file
-		audio_url = "http://translate.google.com/translate_tts?tl=en&q="+lines[this_index].split(':')[0]
+		audio_url = "http://translate.google.com/translate_tts?tl=en&q="+lines[this_index].split('~')[0]
 		
 def add_memo(word, memo_file):
 	memo = [];
@@ -243,17 +216,33 @@ def add_memo(word, memo_file):
 			break
 	memo.append(word)
 	memo.append(input_str)
-	mm = ':'.join(memo)
+	mm = '~'.join(memo)
 	with open(memo_file, "a+") as f:
 		f.write(mm)
 		f.write('\n')
 	print "Memo Added"
 
+def process_audio(audio_url, mp3_name):
+	if os.path.exists(mp3_name):
+		if sys.platform == 'darwin':
+			process = subprocess.Popen(['afplay', mp3_name], stdout=dev_null, stderr=dev_null)
+		else:
+			process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
+#		retcode = process.wait()
+	else:
+		# download mp3 file to $HOME/mp3.dir
+		download_mp3(audio_url, mp3_name)
+		# find wait function on the last line
+		if sys.platform == 'darwin':
+			process = subprocess.Popen(['afplay', mp3_name], stdout=dev_null, stderr=dev_null)
+		else:
+			process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
+#		retcode = process.wait()
 
 if __name__ == "__main__":
 
 	# flag to show wether the word is already in the file 
-	word_is_there = 0
+	is_word_there = 0
 
 	# wait for input, word or action
 	input_str = ""
@@ -286,7 +275,7 @@ if __name__ == "__main__":
 	# try to find the word from file first
 	while True:
 		# flag to show wether the word is already in the file 		
-		word_is_there = 0
+		is_word_there = 0
 		# this contains everython about a word
 		word_content = []
 
@@ -309,26 +298,11 @@ if __name__ == "__main__":
 			audio_url = "http://translate.google.com/translate_tts?tl=en&q="+input_str
 			
 
-			word_is_there, word_content = process_word(input_str)
+			is_word_there, word_content = process_word(input_str)
 
 			# if this word's audio file is already exists, just play it
 			# do not download it again
-			if os.path.exists(mp3_name):
-				if sys.platform == 'darwin':
-					process = subprocess.Popen(['afplay', mp3_name], stdout=dev_null, stderr=dev_null)
-				else:
-					process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
-				retcode = process.wait()
-			else:
-				# download mp3 file to $HOME/mp3.dir
-				download_mp3(audio_url, mp3_name)
-				# find wait function on the last line
-				if sys.platform == 'darwin':
-					process = subprocess.Popen(['afplay', mp3_name], stdout=dev_null, stderr=dev_null)
-				else:
-					process = subprocess.Popen(['play', mp3_name], stdout=dev_null, stderr=dev_null)
-
-		
+			process_audio(audio_url, mp3_name)
 		
 			# play mp3 file and redirect stdout to /dev/null then wait process to complete
 			try:
@@ -342,13 +316,13 @@ if __name__ == "__main__":
 
 			# press just 'enter' will add this word
 			if add_word == "":
-				if word_is_there == 1:
+				if is_word_there == 1:
 					pass
 				else:
 					os.remove(mp3_name)
 					print "  OK, forget about it"
 			elif add_word == "y":
-				if word_is_there == 1:
+				if is_word_there == 1:
 					print '  Word already there'
 				else:
 					add_a_word(word_content)
@@ -357,7 +331,7 @@ if __name__ == "__main__":
 					add_memo(input_str, memo_file)
 					add_a_word(word_content)
 			else:
-				if word_is_there == 1:
+				if is_word_there == 1:
 					delete_from_file(memo_file, input_str)
 					delete_from_file(words_file, input_str)
 					os.remove(mp3_name)
@@ -365,4 +339,3 @@ if __name__ == "__main__":
 					os.remove(mp3_name)
 				print "  OK, forget about it"
 
-			retcode = process.wait()

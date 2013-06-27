@@ -100,7 +100,7 @@ def process_word(word):
 			return is_word_there, None		
 		pronunciations = phonetic.find_all('bdo')
 			
-		basic = soup.find('div', class_ = 'layout basic')
+		basic = soup.find('div', class_ = 'layout basic clearfix')
 		word_meanings = basic.find_all('strong')
 
 

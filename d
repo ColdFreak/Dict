@@ -248,17 +248,17 @@ if __name__ == "__main__":
 	input_str = ""
 	
 	global memo_file
-   	memo_file = os.environ['HOME'] + "/Dict/memo_file"
+   	memo_file = os.environ['HOME'] + "/Dropbox/Public/dict/memo_file"
 	
 
 	# directory to store mp3 files
 	global mp3_dir
-	mp3_dir	= os.environ['HOME'] + "/Dict/mp3_dir/"
+	mp3_dir	= os.environ['HOME'] + "/Dropbox/Public/dict/mp3_dir/"
 
 
 	# file to store content of a words
 	global words_file
-	words_file = os.environ['HOME']+"/Dict/words_file"
+	words_file = os.environ['HOME']+"/Dropbox/Public/dict/words_file"
 
 	# redirect stdout to /dev/null when play the mp3 file
 	dev_null = open('/dev/null', 'w')

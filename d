@@ -12,6 +12,8 @@ from random import randint
 
 from bs4 import BeautifulSoup
 
+from colorama import Fore
+
 
 # create a directory to save audio mp3(mp3_dir)
 def mkdir_p(path):
@@ -167,10 +169,11 @@ def meaning_to_spelling():
 		
 		if spelling == lines[this_index].split('~')[0] :
 			print " Good Job \(^_^)/"
-			print lines[this_index].split('~')[1]
+			print Fore.GREEN + lines[this_index].split('~')[1] + Fore.RESET
+			print ""
 			for memo_line in memo_lines:
 				if memo_line.split('~')[0] == spelling:
-					print memo_line
+					print Fore.RED + memo_line + Fore.RESET
 					break
 			process_audio(audio_url, mp3_name)
 		else:

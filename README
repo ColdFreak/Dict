@@ -1,3 +1,2 @@
-也许我应该使用urllib2的User-agent功能来从google trnaslate
-获取发音
-
+这是一个python写成的中英字典， 它从dict.cn上获得音标和释义，从谷歌翻译上获得发音。
+这个字典拥有练习模式，用来复习自己添加的单词。

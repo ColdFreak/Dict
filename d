@@ -173,7 +173,10 @@ def meaning_to_spelling():
 			print ""
 			for memo_line in memo_lines:
 				if memo_line.split('~')[0] == spelling:
-					print Fore.RED + memo_line + Fore.RESET
+					print Fore.RED + spelling
+					print memo_line.split('~')[1] + Fore.RESET
+				
+	#				print Fore.RED + memo_line + Fore.RESET
 					break
 			process_audio(audio_url, mp3_name)
 		else:
